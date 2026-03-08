@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spot The Ball - Jackpot Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg-secondary: #12121a;
+  --fg: #e8e8ec;
+  --muted: #6b6b7a;
+  --accent: #00e5a0;
+  --accent-glow: rgba(0, 229, 160, 0.4);
+  --gold: #ffd700;
+  --gold-glow: rgba(255, 215, 0, 0.5);
+  --danger: #ff3366;
+  --card: rgba(18, 18, 26, 0.9);
+  --border: rgba(255, 255, 255, 0.08);
+  --tier-jackpot: #ffd700;
+  --tier-close: #00e5a0;
+  --tier-near: #3399ff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(0, 229, 160, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 160, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-glow {
+  position: fixed;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-glow-1 { top: -200px; left: -200px; background: var(--accent); }
+.bg-glow-2 { bottom: -200px; right: -200px; background: var(--gold); }
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.header { text-align: center; margin-bottom: 24px; }
+
+.title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(28px, 5vw, 42px);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent) 0%, #00ffcc 50%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 8px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.jackpot-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.1) 0%, transparent 100%);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.jackpot-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.jackpot-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  color: var(--gold);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+}
+
+.jackpot-value {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(48px, 10vw, 72px);
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 30px var(--gold-glow), 0 0 60px var(--gold-glow);
+  animation: jackpotPulse 3s ease-in-out infinite;
+}
+
+.jackpot-value.explosion { animation: jackpotExplosion 2s ease-in-out forwards; }
+.jackpot-value.win-glow { animation: winGlow 0.5s ease-out; }
+
+@keyframes jackpotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.02); }
+}
+
+@keyframes jackpotExplosion {
+  0% { transform: scale(1); filter: hue-rotate(0deg); }
+  25% { transform: scale(1.3); text-shadow: 0 0 50px #fff, 0 0 100px var(--gold); }
+  50% { transform: scale(1.15); filter: hue-rotate(30deg); }
+  75% { transform: scale(1.25); text-shadow: 0 0 80px #ff3366, 0 0 120px #ff3366; }
+  100% { transform: scale(1); filter: hue-rotate(0deg); text-shadow: 0 0 30px var(--gold-glow); }
+}
+
+@keyframes winGlow {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); text-shadow: 0 0 40px var(--accent); }
+  100% { transform: scale(1); }
+}
+
+.prize-tiers {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.tier-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tier-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.tier-jackpot { border: 1px solid var(--tier-jackpot); color: var(--tier-jackpot); }
+.tier-jackpot .tier-dot { background: var(--tier-jackpot); box-shadow: 0 0 8px var(--tier-jackpot); }
+
+.tier-close { border: 1px solid var(--tier-close); color: var(--tier-close); }
+.tier-close .tier-dot { background: var(--tier-close); box-shadow: 0 0 8px var(--tier-close); }
+
+.tier-near { border: 1px solid var(--tier-near); color: var(--tier-near); }
+.tier-near .tier-dot { background: var(--tier-near); box-shadow: 0 0 8px var(--tier-near); }
+
+.controls-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.stake-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.stake-group label { color: var(--muted); font-size: 13px; white-space: nowrap; }
+
+.stake-input {
+  width: 90px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.stake-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #00cc88);
+  color: var(--bg);
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+.btn-primary:hover { box-shadow: 0 6px 30px var(--accent-glow); transform: translateY(-2px); }
+.btn-secondary { background: rgba(255, 255, 255, 0.05); color: var(--fg); border: 1px solid var(--border); }
+.btn-secondary:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--accent); }
+.btn-active { background: var(--accent); color: var(--bg); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+.btn-reset {
+  background: rgba(255, 51, 102, 0.2);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.btn-reset:hover {
+  background: var(--danger);
+  color: white;
+}
+
+.game-section { position: relative; margin-bottom: 24px; }
+
+.canvas-wrapper {
+  position: relative;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 
+    0 0 0 1px rgba(0, 229, 160, 0.3),
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: crosshair;
+}
+
+.crosshair-overlay { position: absolute; pointer-events: none; z-index: 10; }
+
+#crosshair {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+#crosshair.visible { opacity: 1; }
+
+.plus-marker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+}
+
+.plus-marker::before,
+.plus-marker::after {
+  content: '';
+  position: absolute;
+  background: var(--danger);
+  border-radius: 1px;
+  box-shadow: 0 0 6px var(--danger);
+}
+
+.plus-marker::before {
+  width: 32px;
+  height: 2px;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.plus-marker::after {
+  width: 2px;
+  height: 32px;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.plus-center {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--danger);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px var(--danger);
+}
+
+.crosshair-ring {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--danger);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px var(--danger);
+}
+
+#zoomLens {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 15px var(--accent-glow);
+  pointer-events: none;
+  display: none;
+  z-index: 20;
+  overflow: hidden;
+  background-repeat: no-repeat;
+}
+
+#zoomLens::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+#coordsDisplay {
+  position: absolute;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  color: var(--accent);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 15;
+}
+
+.no-image-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  z-index: 25;
+}
+
+.no-image-overlay.hidden { display: none; }
+
+.no-image-overlay svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.5; }
+.no-image-overlay p { color: var(--muted); margin-bottom: 16px; }
+
+.results-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.results-header h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.guess-count { font-size: 13px; color: var(--muted); }
+
+.results-table { width: 100%; border-collapse: collapse; }
+
+.results-table th, .results-table td {
+  padding: 14px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.results-table th {
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.results-table td { font-family: 'Orbitron', sans-serif; font-size: 13px; }
+.results-table tr { transition: background 0.2s; }
+.results-table tr:hover { background: rgba(255, 255, 255, 0.03); }
+
+.color-indicator {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.result-jackpot { color: var(--tier-jackpot); font-weight: 700; text-shadow: 0 0 10px var(--tier-jackpot); }
+.result-close { color: var(--tier-close); font-weight: 700; }
+.result-near { color: var(--tier-near); font-weight: 600; }
+.result-far { color: var(--danger); opacity: 0.7; }
+
+.btn-remove {
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: rgba(255, 51, 102, 0.2);
+  color: var(--danger);
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.btn-remove:hover {
+  background: var(--danger);
+  color: white;
+  transform: scale(1.1);
+}
+
+.empty-state { padding: 48px 20px; text-align: center; color: var(--muted); }
+.empty-state svg { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.3; }
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.stat-item { text-align: center; }
+.stat-value { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 700; color: var(--fg); }
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toast {
+  padding: 16px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  transform: translateX(120%);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast.show { transform: translateX(0); }
+.toast-success { border-color: var(--accent); }
+.toast-error { border-color: var(--danger); }
+.toast-info { border-color: #3399ff; }
+.toast-win { border-color: var(--gold); background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), transparent); }
+
+.toast-content { display: flex; align-items: center; gap: 12px; }
+.toast-icon { width: 24px; height: 24px; flex-shrink: 0; }
+.toast-message { font-size: 14px; font-weight: 500; }
+.toast-amount { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700; color: var(--gold); }
+
+@media (max-width: 640px) {
+  .container { padding: 16px 12px; }
+  .controls-panel { flex-direction: column; gap: 16px; }
+  .stake-group { width: 100%; justify-content: center; }
+  .btn { width: 100%; }
+  .results-table th, .results-table td { padding: 10px 8px; font-size: 11px; }
+  #zoomLens { width: 90px; height: 90px; }
+  #crosshair { width: 30px; height: 30px; }
+  .plus-marker { width: 24px; height: 24px; }
+  .plus-marker::before { width: 24px; }
+  .plus-marker::after { height: 24px; }
+  .crosshair-ring { width: 24px; height: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+*:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<div class="container">
+  <header class="header">
+    <h1 class="title">Spot The Ball</h1>
+    <p class="subtitle">Jackpot Edition</p>
+  </header>
+
+  <section class="jackpot-section">
+    <span class="jackpot-label">Current Jackpot</span>
+    <span class="jackpot-value" id="jackpotDisplay">$500.00</span>
+  </section>
+
+  <div class="prize-tiers">
+    <div class="tier-badge tier-jackpot">
+      <span class="tier-dot"></span>
+      <span>Jackpot: 0-15px</span>
+    </div>
+    <div class="tier-badge tier-close">
+      <span class="tier-dot"></span>
+      <span>Close: 16-50px</span>
+    </div>
+    <div class="tier-badge tier-near">
+      <span class="tier-dot"></span>
+      <span>Near: 51-100px</span>
+    </div>
+  </div>
+
+  <div class="controls-panel">
+    <div class="stake-group">
+      <label for="stakeInput">Stake (min $0.20)</label>
+      <input type="number" id="stakeInput" class="stake-input" min="0.2" step="0.1" value="0.5" aria-label="Stake amount">
+    </div>
+    <button class="btn btn-primary" id="playBtn">Start Game</button>
+    <button class="btn btn-secondary btn-active" id="toggleZoomBtn">Zoom: ON</button>
+    <button class="btn btn-secondary" id="undoBtn" disabled>Undo</button>
+    <button class="btn btn-secondary" id="redoBtn" disabled>Redo</button>
+    <button class="btn btn-secondary btn-reset" id="resetBtn">Reset All</button>
+  </div>
+
+  <section class="game-section">
+    <div class="canvas-wrapper" id="canvasWrapper">
+      <canvas id="gameCanvas" width="900" height="562"></canvas>
+      
+      <div class="crosshair-overlay">
+        <div id="crosshair">
+          <div class="crosshair-ring"></div>
+          <div class="plus-marker"></div>
+          <div class="plus-center"></div>
+        </div>
+      </div>
+      
+      <div id="zoomLens"></div>
+      <div id="coordsDisplay"></div>
+      
+      <div class="no-image-overlay" id="noImageOverlay">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <p>Loading Football Image...</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="results-section">
+    <div class="results-header">
+      <h3>Your Guesses</h3>
+      <span class="guess-count" id="guessCount">0 guesses</span>
+    </div>
+    
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Color</th>
+          <th>X</th>
+          <th>Y</th>
+          <th>Distance</th>
+          <th>Prize</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody">
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 8v4m0 4h.01"/>
+              </svg>
+              <p>Start the game to make guesses!</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-value" id="totalWinnings">$0.00</div>
+        <div class="stat-label">Total Winnings</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="bestDistance">--</div>
+        <div class="stat-label">Best Distance</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="totalGuesses">0</div>
+        <div class="stat-label">Total Guesses</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// DOM Elements
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const canvasWrapper = document.getElementById('canvasWrapper');
+const crosshair = document.getElementById('crosshair');
+const zoomLens = document.getElementById('zoomLens');
+const coordsDisplay = document.getElementById('coordsDisplay');
+const resultsBody = document.getElementById('resultsBody');
+const jackpotDisplay = document.getElementById('jackpotDisplay');
+const guessCountEl = document.getElementById('guessCount');
+const totalWinningsEl = document.getElementById('totalWinnings');
+const bestDistanceEl = document.getElementById('bestDistance');
+const totalGuessesEl = document.getElementById('totalGuesses');
+const noImageOverlay = document.getElementById('noImageOverlay');
+const toastContainer = document.getElementById('toastContainer');
+const stakeInput = document.getElementById('stakeInput');
+const playBtn = document.getElementById('playBtn');
+const undoBtn = document.getElementById('undoBtn');
+const redoBtn = document.getElementById('redoBtn');
+const resetBtn = document.getElementById('resetBtn');
+const toggleZoomBtn = document.getElementById('toggleZoomBtn');
+
+// Game State
+let jackpot = 500;
+let currentStake = 0;
+let gameActive = false;
+let imageLoaded = false;
+let guesses = [];
+let redoStack = [];
+let colorIndex = 0;
+let totalWinnings = 0;
+let ballPosition = { x: 0, y: 0 };
+let zoomActive = true;
+
+const GUESS_COLORS = ['#00e5a0', '#ff3366', '#3399ff', '#ffd700', '#ff66b2', '#9966ff', '#00ffcc', '#ff9933'];
+
+const PRIZE_TIERS = {
+  JACKPOT: { maxDistance: 15, multiplier: 0.5, label: 'JACKPOT', class: 'result-jackpot' },
+  CLOSE: { maxDistance: 50, multiplier: 0.05, label: 'CLOSE', class: 'result-close' },
+  NEAR: { maxDistance: 100, multiplier: 0.01, label: 'NEAR', class: 'result-near' }
+};
+
+const gameImage = new Image();
+gameImage.crossOrigin = 'anonymous';
+
+// Updated image URL
+gameImage.src = "https://i.postimg.cc/mZwpKHnL/football.png";
+
+gameImage.onload = function() {
+  imageLoaded = true;
+  noImageOverlay.classList.add('hidden');
+  
+  canvas.width = gameImage.naturalWidth;
+  canvas.height = gameImage.naturalHeight;
+  
+  ballPosition.x = Math.floor(Math.random() * (canvas.width - 100)) + 50;
+  ballPosition.y = Math.floor(Math.random() * (canvas.height - 100)) + 50;
+  
+  drawCanvas();
+  showToast('Football loaded! Find the hidden ball!', 'success');
+};
+
+gameImage.onerror = function() {
+  noImageOverlay.classList.remove('hidden');
+  noImageOverlay.querySelector('p').textContent = 'Error loading image.';
+  showToast('Failed to load image', 'error');
+};
+
+function drawCanvas() {
+  if (!imageLoaded) return;
+  
+  const displayWidth = canvasWrapper.clientWidth;
+  const displayHeight = displayWidth * (canvas.height / canvas.width);
+  canvas.style.width = displayWidth + 'px';
+  canvas.style.height = displayHeight + 'px';
+  
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(gameImage, 0, 0);
+  
+  // Draw small refined markers
+  guesses.forEach((guess, index) => {
+    const x = guess.canvasX;
+    const y = guess.canvasY;
+    
+    ctx.shadowColor = guess.color;
+    ctx.shadowBlur = 8;
+    
+    // Small plus sign
+    ctx.strokeStyle = guess.color;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    
+    ctx.beginPath();
+    ctx.moveTo(x - 8, y);
+    ctx.lineTo(x + 8, y);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(x, y - 8);
+    ctx.lineTo(x, y + 8);
+    ctx.stroke();
+    
+    // Small center dot
+    ctx.fillStyle = guess.color;
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+    
+    // Small number
+    ctx.font = '10px Orbitron';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 2;
+    ctx.strokeText(index + 1, x, y - 10);
+    ctx.fillText(index + 1, x, y - 10);
+  });
+}
+
+function getCanvasCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: Math.round((clientX - rect.left) * scaleX),
+    y: Math.round((clientY - rect.top) * scaleY),
+    displayX: clientX - rect.left,
+    displayY: clientY - rect.top
+  };
+}
+
+function isCoordinatePlayed(x, y) {
+  return guesses.some(g => Math.abs(g.canvasX - x) < 5 && Math.abs(g.canvasY - y) < 5);
+}
+
+function calculateDistance(x, y) {
+  return Math.round(Math.sqrt(Math.pow(x - ballPosition.x, 2) + Math.pow(y - ballPosition.y, 2)));
+}
+
+function calculatePrize(distance) {
+  if (distance <= PRIZE_TIERS.JACKPOT.maxDistance) return { amount: jackpot * 0.5 + currentStake * 10, tier: 'JACKPOT', label: 'JACKPOT!', class: 'result-jackpot' };
+  if (distance <= PRIZE_TIERS.CLOSE.maxDistance) return { amount: jackpot * 0.05 + currentStake * 3, tier: 'CLOSE', label: 'CLOSE!', class: 'result-close' };
+  if (distance <= PRIZE_TIERS.NEAR.maxDistance) return { amount: jackpot * 0.01 + currentStake * 1, tier: 'NEAR', label: 'NEAR', class: 'result-near' };
+  return { amount: 0, tier: 'FAR', label: distance + 'px', class: 'result-far' };
+}
+
+function updateJackpotDisplay(val, animate = true) {
+  if (!animate) { jackpot = val; jackpotDisplay.textContent = '$' + val.toFixed(2); return; }
+  const start = jackpot, end = val, t0 = performance.now();
+  function anim(t) {
+    const p = Math.min((t - t0) / 600, 1);
+    const v = start + (end - start) * (1 - Math.pow(1 - p, 3));
+    jackpotDisplay.textContent = '$' + v.toFixed(2);
+    if (p < 1) requestAnimationFrame(anim);
+    else jackpot = end;
+  }
+  requestAnimationFrame(anim);
+}
+
+function showToast(msg, type = 'info', amt = null) {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  const icons = { success: '✓', error: '✕', win: '★', info: 'ℹ' };
+  t.innerHTML = `<div class="toast-content"><span style="font-size:20px">${icons[type]}</span><div><span class="toast-message">${msg}</span>${amt ? `<div class="toast-amount">+$${amt.toFixed(2)}</div>` : ''}</div></div>`;
+  toastContainer.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 4000);
+}
+
+function updateResultsTable() {
+  if (!guesses.length) {
+    resultsBody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>Start the game!</p></div></td></tr>';
+    guessCountEl.textContent = '0 guesses';
+    totalWinningsEl.textContent = '$0.00';
+    bestDistanceEl.textContent = '--';
+    return;
+  }
+  resultsBody.innerHTML = guesses.map((g, i) => `<tr><td>${i+1}</td><td><span class="color-indicator" style="background:${g.color}"></span></td><td>${g.canvasX}</td><td>${g.canvasY}</td><td>${g.distance}px</td><td class="${g.prizeClass}">${g.prizeLabel}</td><td><button class="btn-remove" onclick="removeGuess(${i})">×</button></td></tr>`).join('');
+  guessCountEl.textContent = `${guesses.length} guess${guesses.length > 1 ? 'es' : ''}`;
+  totalWinningsEl.textContent = '$' + totalWinnings.toFixed(2);
+  bestDistanceEl.textContent = Math.min(...guesses.map(g => g.distance)) + 'px';
+}
+
+function updateButtons() {
+  undoBtn.disabled = !guesses.length;
+  redoBtn.disabled = !redoStack.length;
+}
+
+window.removeGuess = function(i) {
+  if (guesses[i].prize > 0) totalWinnings -= guesses[i].prize;
+  guesses.splice(i, 1);
+  drawCanvas();
+  updateResultsTable();
+  updateButtons();
+};
+
+function handleGuess(e) {
+  if (!gameActive) { showToast('Click Start Game!', 'error'); return; }
+  const coords = getCanvasCoords(e);
+  if (isCoordinatePlayed(coords.x, coords.y)) { showToast('Already played!', 'error'); return; }
+  
+  const dist = calculateDistance(coords.x, coords.y);
+  const prize = calculatePrize(dist);
+  const color = GUESS_COLORS[colorIndex++ % GUESS_COLORS.length];
+  
+  guesses.push({ canvasX: coords.x, canvasY: coords.y, distance: dist, color, prize: prize.amount, prizeLabel: prize.label, prizeClass: prize.class, tier: prize.tier });
+  redoStack = [];
+  if (prize.amount > 0) totalWinnings += prize.amount;
+  
+  drawCanvas();
+  updateResultsTable();
+  updateButtons();
+  
+  if (prize.tier === 'JACKPOT') {
+    jackpotDisplay.classList.add('explosion');
+    setTimeout(() => jackpotDisplay.classList.remove('explosion'), 2000);
+    showToast('JACKPOT!', 'win', prize.amount);
+    setTimeout(() => updateJackpotDisplay(500), 2500);
+  } else if (prize.tier === 'CLOSE') {
+    jackpotDisplay.classList.add('win-glow');
+    setTimeout(() => jackpotDisplay.classList.remove('win-glow'), 500);
+    showToast('Close!', 'win', prize.amount);
+  } else if (prize.tier === 'NEAR') {
+    showToast('Getting warm!', 'success', prize.amount);
+  } else {
+    updateJackpotDisplay(jackpot + currentStake * 0.1);
+  }
+}
+
+// Event Listeners
+playBtn.onclick = () => {
+  const stake = parseFloat(stakeInput.value);
+  if (isNaN(stake) || stake < 0.2) { showToast('Min $0.20', 'error'); return; }
+  if (!imageLoaded) { showToast('Loading...', 'error'); return; }
+  currentStake = stake;
+  gameActive = true;
+  updateJackpotDisplay(jackpot + stake * 0.2);
+  showToast(`Started with $${stake.toFixed(2)}`, 'success');
+};
+
+undoBtn.onclick = () => { if (guesses.length) { const g = guesses.pop(); if (g.prize > 0) totalWinnings -= g.prize; redoStack.push(g); drawCanvas(); updateResultsTable(); updateButtons(); } };
+redoBtn.onclick = () => { if (redoStack.length) { const g = redoStack.pop(); if (g.prize > 0) totalWinnings += g.prize; guesses.push(g); drawCanvas(); updateResultsTable(); updateButtons(); } };
+
+resetBtn.onclick = () => {
+  guesses = []; redoStack = []; colorIndex = 0; totalWinnings = 0; gameActive = false; currentStake = 0; jackpot = 500;
+  jackpotDisplay.textContent = '$500.00';
+  jackpotDisplay.classList.remove('explosion', 'win-glow');
+  if (imageLoaded) { ballPosition.x = Math.random() * (canvas.width - 100) + 50; ballPosition.y = Math.random() * (canvas.height - 100) + 50; }
+  drawCanvas(); updateResultsTable(); updateButtons();
+  showToast('Reset!', 'info');
+};
+
+toggleZoomBtn.onclick = () => {
+  zoomActive = !zoomActive;
+  toggleZoomBtn.textContent = zoomActive ? 'Zoom: ON' : 'Zoom: OFF';
+  toggleZoomBtn.classList.toggle('btn-active', zoomActive);
+  if (!zoomActive) zoomLens.style.display = 'none';
+};
+
+canvas.onclick = handleGuess;
+
+canvas.onmousemove = (e) => {
+  if (!imageLoaded) return;
+  const coords = getCanvasCoords(e);
+  crosshair.style.left = coords.displayX + 'px';
+  crosshair.style.top = coords.displayY + 'px';
+  crosshair.classList.add('visible');
+  coordsDisplay.style.left = (coords.displayX + 15) + 'px';
+  coordsDisplay.style.top = (coords.displayY - 15) + 'px';
+  coordsDisplay.textContent = `${coords.x}, ${coords.y}`;
+  
+  if (zoomActive) {
+    const scale = 2;
+    zoomLens.style.display = 'block';
+    zoomLens.style.left = (coords.displayX + 20) + 'px';
+    zoomLens.style.top = (coords.displayY - 60) + 'px';
+    zoomLens.style.backgroundImage = `url(${gameImage.src})`;
+    zoomLens.style.backgroundSize = `${canvas.width * scale}px ${canvas.height * scale}px`;
+    zoomLens.style.backgroundPosition = `${-(coords.x * scale - 60)}px ${-(coords.y * scale - 60)}px`;
+  } else {
+    zoomLens.style.display = 'none';
+  }
+};
+
+canvas.onmouseleave = () => { crosshair.classList.remove('visible'); zoomLens.style.display = 'none'; };
+canvas.ontouchstart = (e) => { e.preventDefault(); handleGuess(e); };
+
+window.onresize = () => { if (imageLoaded) drawCanvas(); };
+updateButtons();
+</script>
+</body>
+</html>
